@@ -1,18 +1,30 @@
 package com.rsschool.android2021
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
-import androidx.activity.addCallback
+import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
+import kotlin.random.Random
+
 
 class SecondFragment : Fragment() {
 
+
+    var selectedItem: Int = 0
     private var backButton: Button? = null
     private var result: TextView? = null
+    private var listener: PressBack? = null
+
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        listener = context as PressBack
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -30,19 +42,31 @@ class SecondFragment : Fragment() {
         val min = arguments?.getInt(MIN_VALUE_KEY) ?: 0
         val max = arguments?.getInt(MAX_VALUE_KEY) ?: 0
 
-        result?.text = generate(min, max).toString()
+       val generatedRandomNumber = generate(min, max)
+        result?.text = generatedRandomNumber.toString()
+
+        val callback: OnBackPressedCallback =
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    listener?.onBackButtonPressed(generatedRandomNumber)
+                }
+            }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
+
+
 
         backButton?.setOnClickListener {
-            (activity as OpenFragment).openFirstFragment(result?.text.toString().toInt())
-        }
-        activity?.onBackPressedDispatcher?.addCallback {
-            (activity as OpenFragment).openFirstFragment(result?.text.toString().toInt())
+            listener?.onBackButtonPressed(generatedRandomNumber)
         }
     }
 
+    interface PressBack {
+        fun onBackButtonPressed(generatedRandomNumber: Int)
+    }
 
     private fun generate(min: Int, max: Int): Int {
-        return (min..max).random()
+
+        return Random.nextInt(max - min + 1) + min
     }
 
     companion object {
@@ -57,7 +81,6 @@ class SecondFragment : Fragment() {
 
             return fragment
         }
-
         private const val MIN_VALUE_KEY = "MIN_VALUE"
         private const val MAX_VALUE_KEY = "MAX_VALUE"
     }
